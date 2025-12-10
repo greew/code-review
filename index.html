@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Just a quick thing…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { color-scheme: dark light; }
+    body {
+        margin:0;
+        background:#000;
+        min-height:100vh;
+        display:flex;
+        flex-direction: column;
+        align-items:center;
+        justify-content:space-evenly;
+        font-family:system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .text1 {
+        color: red;
+        font-size: 4em;
+    }
+    .text2 {
+        color: red;
+        font-size: 2em;
+    }
+    .wrap {
+        position:relative;
+        width:92vw;
+        max-width:960px;
+        aspect-ratio:16/9;
+    }
+    #player {
+        width:100%;
+        height:100%;
+    }
+    .cover {
+        position:absolute;
+        inset:0;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        text-align:center;
+        color:#fff;
+        background:rgba(0,0,0,0.99);
+        padding:2rem;
+        gap:0.75rem;
+    }
+    .hint {
+        font-size:0.9rem;
+        opacity:0.85;
+    }
+    .button {
+        margin-top:0.5rem;
+        padding:0.6rem 1rem;
+        background:#ffffff20;
+        border:1px solid #ffffff40;
+        color:#fff;
+        border-radius:8px;
+        cursor:pointer;
+        backdrop-filter: blur(4px);
+        font-size: 3em;
+    }
+    /* Base colors for dark overlay */
+    .spinner-svg { transform-origin: 50% 50%; }
+    .spinner-track { stroke: #ffffff33; }             /* faint track */
+    .spinner-arc   { stroke: #ffffff; }               /* bright arc */
+
+    /* Rotate the whole SVG continuously */
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    .spinner-svg {
+        animation: spin 1s linear infinite;
+    }
+
+    /* Optional: dash animation for the arc (breathing feel) */
+    @keyframes dash {
+        0%   { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+        50%  { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+        100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+    }
+    .spinner-arc {
+        /* Create an arc by using dasharray/dashoffset */
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: 0;
+        animation: dash 1.25s ease-in-out infinite;
+
+  </style>
+</head>
+<body>
+    <div class="text1">Merry X-mas!!</div>
+    <div class="wrap">
+        <div id="player"></div>
+    </div>
+    <div class="cover" id="cover">
+        <div id="msg" style="font-weight:700; font-size:1.8rem;">Loading code-reviewer may take some time - please wait...</div>
+
+        <svg id="spinner" class="spinner-svg" viewBox="0 0 50 50" width="40" height="40">
+            <!-- Track -->
+            <circle class="spinner-track" cx="25" cy="25" r="20" fill="none" stroke-width="6"/>
+            <!-- Arc that rotates -->
+            <circle class="spinner-arc" cx="25" cy="25" r="20" fill="none" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+
+        <button class="button" id="startBtn" style="display: none;">Start</button>
+    </div>
+    <div class="text2">PS: You've been Rickrolled Christmas style</div>
+
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        let player;
+        let timeout;
+        const spinner = document.getElementById('spinner');
+        const cover = document.getElementById('cover');
+        const msg = document.getElementById('msg');
+        const startBtn = document.getElementById('startBtn');
+
+        function removeCover() {
+            if (cover && cover.parentNode) {
+                cover.parentNode.removeChild(cover);
+            }
+        }
+
+        // Optional: remove cover when playback actually starts (muted autoplay)
+        function onPlaybackStarted() {
+            timeout = setInterval(_ => {
+                const time = (player.getCurrentTime() + "").split('.');
+                if (time.length < 2) {
+                    return;
+                }
+                const ms = time[1];
+                if (ms.length > 12) {
+                    clearInterval(timeout);
+                    ready();
+                }
+          }, 250)
+        }
+
+        // Global callback required by the IFrame API
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                width: '100%',
+                height: '100%',
+                videoId: 'E8gmARGvPlI',
+                playerVars: {
+                    autoplay: 1,
+                    mute: 1,
+                },
+                events: {
+                    onStateChange: (e) => {
+                        if (e.data === YT.PlayerState.PLAYING || e.data === YT.PlayerState.BUFFERING) {
+                            onPlaybackStarted();
+                        }
+                    }
+                }
+            });
+        }
+      window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+      const start = () => {
+          // Now enable audio—this is allowed because we have a user gesture
+          player.unMute();
+          player.setVolume(100);
+
+          // Ensure playback is running (some browsers pause before interaction)
+          player.playVideo();
+
+          removeCover();
+      };
+
+      const ready = () => {
+          spinner.remove();
+          msg.textContent = "Ready!";
+          startBtn.style.display = '';
+          startBtn.addEventListener('click', start);
+          // Extra safety: treat any pointer/touch as a gesture
+          // (helps if the user taps anywhere other than the button)
+          window.addEventListener('pointerdown', start, { once: true });
+      };
+    </script>
+
+</body>
+</html>
